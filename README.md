@@ -4,7 +4,7 @@ OGF/OSM Image/tile downloader and stitcher
 This is a simple tool I made with ChatGPT for downloading tiles on [OGF](https://opengeofiction.net), OSM or Arhet then stitching them to one pretty map.
 ![banner](/images/ex1.png)
 > [!CAUTION]
->We are not responsible for any server overloading or DOS attacks that are caused by this tool. We highly warn you to keep downloads small on OSM related tile servers as it can easialy overload them. OGF ones can take a little bit more but try to keep them below 2k tiles also (higher can be done but dont always do large amouts)
+>please do not overload the server with absurd tile request amounts limit yourself to like 1k or 1.5k tiles at most this was really just put here so I would not lose it when my hard drive nukes itself
 ## Setup
 
 First install the following dependencies with:
