@@ -110,7 +110,7 @@ def start_download():
     if total_tiles > 1000:
         return jsonify({
             "status": "Error",
-            "message": "Too many tiles — please zoom in or select a smaller area.",
+            "message": "Too many tiles! Please download a smaller area or use a lower zoom level, refresh the page to try again.",
             "total_tiles": total_tiles
         }), 400
 
