@@ -77,6 +77,14 @@ def download_tiles(tile_server, zoom, lat1, lon1, lat2, lon2, max_threads=12):
         for zoom, x, y in tile_coords:
             executor.submit(download_tile, tile_server, zoom, x, y)
 
+
+def count_tiles(zoom, lat1, lon1, lat2, lon2):
+    x_min, y_min = latlon_to_tile(lat1, lon1, zoom)
+    x_max, y_max = latlon_to_tile(lat2, lon2, zoom)
+
+    total = (abs(x_max - x_min) + 1) * (abs(y_max - y_min) + 1)
+    return total
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -91,13 +99,24 @@ def start_download():
     zoom = int(data['zoom'])
     lat1, lon1 = round(data['lat1'], 6), round(data['lon1'], 6)
     lat2, lon2 = round(data['lat2'], 6), round(data['lon2'], 6)
-    tile_server = data.get('tile_server', list(TILE_SERVERS.values())[0])  # Default to first server
+    tile_server = data.get('tile_server', list(TILE_SERVERS.values())[0])
 
     if tile_server not in TILE_SERVERS.values():
         return jsonify({"status": "Error", "message": "Invalid tile server"}), 400
 
+    total_tiles = count_tiles(zoom, lat1, lon1, lat2, lon2)
+
+    # 🚫 Reject if > 1000 tiles
+    if total_tiles > 1000:
+        return jsonify({
+            "status": "Error",
+            "message": "Too many tiles! Please download a smaller area or use a lower zoom level, refresh the page to try again.",
+            "total_tiles": total_tiles
+        }), 400
+
     Thread(target=download_tiles, args=(tile_server, zoom, lat1, lon1, lat2, lon2)).start()
-    return jsonify({"status": "Download started", "total_tiles": progress["total"]})
+
+    return jsonify({"status": "Download started", "total_tiles": total_tiles})
 
 @app.route('/progress')
 def get_progress():

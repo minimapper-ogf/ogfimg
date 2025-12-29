@@ -270,36 +270,62 @@
 	});
 	// Function to start downloading tiles
 	function startDownload() {
-		let zoom = document.getElementById('zoom').value;
-		let lat1 = document.getElementById('lat1').value;
-		let lon1 = document.getElementById('lon1').value;
-		let lat2 = document.getElementById('lat2').value;
-		let lon2 = document.getElementById('lon2').value;
-		let tileServer = document.getElementById('tileServer').value;
-		if(!lat1 || !lon1 || !lat2 || !lon2) {
-			alert('Enter valid coordinates or draw a rectangle on the map!');
-			return;
-		}
-		document.getElementById('progress-container').style.display = "block";
-		document.getElementById('progress-text').innerText = "0 / 0";
-		document.getElementById('progress-bar').value = 0;
-		fetch('/start_download', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				zoom: parseInt(zoom),
-				lat1: parseFloat(lat1),
-				lon1: parseFloat(lon1),
-				lat2: parseFloat(lat2),
-				lon2: parseFloat(lon2),
-				tile_server: tileServer
-			})
-		}).then(res => res.json()).then(data => {
-			document.getElementById('status').innerText = data.status;
-			checkProgress();
-		});
+	    let zoom = document.getElementById('zoom').value;
+	    let lat1 = document.getElementById('lat1').value;
+	    let lon1 = document.getElementById('lon1').value;
+	    let lat2 = document.getElementById('lat2').value;
+	    let lon2 = document.getElementById('lon2').value;
+	    let tileServer = document.getElementById('tileServer').value;
+	
+	    if(!lat1 || !lon1 || !lat2 || !lon2) {
+	        alert('Enter valid coordinates or draw a rectangle on the map!');
+	        return;
+	    }
+	
+	    // Reset UI
+	    document.getElementById('status').innerText = "";
+	    document.getElementById('downloadLink').style.display = "none";
+	
+	    document.getElementById('progress-container').style.display = "block";
+	    document.getElementById('progress-text').innerText = "0 / 0";
+	    document.getElementById('progress-bar').value = 0;
+	
+	    fetch('/start_download', {
+	        method: 'POST',
+	        headers: { 'Content-Type': 'application/json' },
+	        body: JSON.stringify({
+	            zoom: parseInt(zoom),
+	            lat1: parseFloat(lat1),
+	            lon1: parseFloat(lon1),
+	            lat2: parseFloat(lat2),
+	            lon2: parseFloat(lon2),
+	            tile_server: tileServer
+	        })
+	    })
+	    .then(async res => {
+	        const data = await res.json();
+	
+	        // ❌ BACKEND ERROR
+	        if (!res.ok || data.status === "Error") {
+	
+	            // Hide progress UI
+	            document.getElementById('progress-text').innerText = "";
+	            document.getElementById('progress-bar').value = 0;
+	
+	            // Show error message instead
+	            document.getElementById('status').innerText = data.message || "Unexpected error";
+	
+	            return; // stop — don't start polling
+	        }
+	
+	        // ✅ SUCCESS — show tiles counter
+	        document.getElementById('status').innerText = "Download started…";
+	        checkProgress();
+	    })
+	    .catch(err => {
+	        document.getElementById('status').innerText = "Network error — try again.";
+	        console.error(err);
+	    });
 	}
 	// Function to check progress of tile downloading
 	function checkProgress() {
