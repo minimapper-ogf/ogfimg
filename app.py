@@ -40,7 +40,7 @@ def latlon_to_tile(lat, lon, zoom):
     return xtile, ytile
 
 def download_tile(tile_server, zoom, x, y):
-    """Download a single tile."""
+    """Download a single tile"""
     global progress
     tile_url = urljoin(tile_server, f"{zoom}/{x}/{y}.png")
     tile_path = os.path.join(tile_folder, f"{zoom}_{x}_{y}.png")
@@ -49,8 +49,14 @@ def download_tile(tile_server, zoom, x, y):
         progress["downloaded"] += 1
         return
 
+    # Define the custom User-Agent here
+    headers = {
+        'User-Agent': 'OGFimg-2.4'
+    }
+
     try:
-        response = requests.get(tile_url, stream=True, timeout=20)
+        # Pass the headers into the get request
+        response = requests.get(tile_url, stream=True, timeout=20, headers=headers)
         if response.status_code == 200:
             with open(tile_path, 'wb') as file:
                 for chunk in response.iter_content(1024):
@@ -60,7 +66,6 @@ def download_tile(tile_server, zoom, x, y):
             print(f"Failed: {tile_url} (Status {response.status_code})")
     except requests.exceptions.RequestException as e:
         print(f"Error downloading {tile_url}: {e}")
-
 def download_tiles(tile_server, zoom, lat1, lon1, lat2, lon2, max_threads=12):
     """Download all tiles in the given coordinate range using multiple threads."""
     global progress
@@ -93,6 +98,29 @@ def index():
 def gallery():
     return render_template('gallery.html')
 
+@app.route('/calculate_tiles', methods=['POST'])
+def calculate_tiles():
+    data = request.json
+    try:
+        zoom = int(data['zoom'])
+        lat1, lon1 = float(data['lat1']), float(data['lon1'])
+        lat2, lon2 = float(data['lat2']), float(data['lon2'])
+
+        total_tiles = count_tiles(zoom, lat1, lon1, lat2, lon2)
+
+        # Estimate dimensions (each tile is 256x256)
+        x_min, y_min = latlon_to_tile(lat1, lon1, zoom)
+        x_max, y_max = latlon_to_tile(lat2, lon2, zoom)
+        width = (abs(x_max - x_min) + 1) * 256
+        height = (abs(y_max - y_min) + 1) * 256
+
+        return jsonify({
+            "total_tiles": total_tiles,
+            "dimensions": f"{width} x {height} px"
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
 @app.route('/start_download', methods=['POST'])
 def start_download():
     data = request.json
@@ -106,7 +134,6 @@ def start_download():
 
     total_tiles = count_tiles(zoom, lat1, lon1, lat2, lon2)
 
-    # 🚫 Reject if > 1000 tiles
     if total_tiles > 1000:
         return jsonify({
             "status": "Error",
