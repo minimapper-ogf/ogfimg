@@ -49,9 +49,8 @@ def download_tile(tile_server, zoom, x, y):
         progress["downloaded"] += 1
         return
 
-    # Define the custom User-Agent here
     headers = {
-        'User-Agent': 'OGFimg-2.4'
+        'User-Agent': 'OGFimg-3.0'
     }
 
     try:
