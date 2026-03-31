@@ -10,15 +10,14 @@ First install the following dependencies with:
 
 After that you should be able to just run the app.py then on port 5000 of the machine you put it on it should show the site ready to use.
 
- ## Usage
-Its really quite simple where you either enter your zoom, start lat and lon, and end lat and lon, or just use the box tool and enter your zoom level. After that seclect "Start Download" where a progress bar will show how many tiles it has downloaded, once complete select "Stitch Map" and after some time it will let you download your image. If you happen to refresh the page before download you canfind it under /download/map_X.png (replace X with its real number).
- 
-Sometimes the download never completes because some tiles are mising and if that happens just click stitch map and once you download the map refresh the main page.
+## Usage
+When on port:5000 of your local machine, you will enter the core page of OGFimg. The process is broken into 3 steps:
+1. Config - You can choose one of the many map sources and the zoom level of the image
+2. Area Selection - Defines the corners of the bounding box. Instead of adding values manually you can use the 'Draw a Rectangle" tool and drag over the area you want and it will add the values for you.
+3. Download & Process - This gives you a preview of tile count and image size in pixels to help with getting the right map size and then downloading and stitching map buttons. A button to get your image will reveal once fully downloaded.
 
 ### Once Done
-Once you are done with downloading an image always refresh the main page (just in case there are errors)
-
-If you are done with making images it can stay on or you can just stop it by closing the command prompt.
+If you need more than one image to be created, refresh your page and you can start again. If you are finished with using the program just close the command prompt :)
 
 ## Examples
 
