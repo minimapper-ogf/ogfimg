@@ -4,200 +4,245 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>OSM Tile Downloader</title>
+	<title>OGFimg - Tile Downloader and Stitcher</title>
 	<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 	<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 	<script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
 	<link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css" />
 	<style>
-	select {
-		width: 100%;
-		padding: 8px;
-		margin-top: 5px;
-		border: 1px solid #ccc;
-		border-radius: 5px;
-		background-color: #fff;
-		font-size: 14px;
-		cursor: pointer;
-		transition: all 0.2s ease-in-out;
-	}
+		:root {
+			--primary: #007bff;
+			--success: #28a745;
+			--warning: #ff9800;
+			--danger: #dc3545;
+			--bg-light: #f8f9fa;
+			--border: #dee2e6;
+		}
 
-	select:hover {
-		border-color: #007bff;
-		background-color: #f8f9fa;
-	}
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+		}
 
-	select:focus {
-		outline: none;
-		border-color: #007bff;
-		box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-	}	
-	
-	* {
-		margin: 0;
-		padding: 0;
-		box-sizing: border-box;
-		font-family: Arial, sans-serif;
-	}
+		body {
+			display: flex;
+			height: 100vh;
+			background-color: #f4f4f4;
+			overflow: hidden;
+		}
 
-	body {
-		display: flex;
-		height: 100vh;
-		background-color: #f4f4f4;
-	}
+		/* SIDEBAR STYLING */
+		#sidebar {
+			width: 320px;
+			background: white;
+			padding: 20px;
+			display: flex;
+			flex-direction: column;
+			gap: 20px;
+			box-shadow: 4px 0px 10px rgba(0, 0, 0, 0.05);
+			z-index: 1000;
+			overflow-y: auto;
+			height: 100vh;
+		}
 
-	#sidebar {
-		width: 20%;
-		background: white;
-		padding: 20px;
-		display: flex;
-		flex-direction: column;
-		/*justify-content: center; */
-		gap: 15px;
-		box-shadow: 2px 0px 5px rgba(0, 0, 0, 0.1);
-		z-index: 1000;
-		top: 0;
-		bottom: 0;
-		overflow-y: auto;
-		position: fixed;
-		height: 100vh;
-		align-items: flex-start;
-	}
+		h1 {
+			font-size: 1.25rem;
+			color: #333;
+			border-bottom: 2px solid var(--primary);
+			padding-bottom: 10px;
+			margin-bottom: 5px;
+		}
 
-	h1 {
-		font-size: 20px;
-		text-align: center;
-		color: #333;
-	}
+		.section-label {
+			font-weight: bold;
+			font-size: 0.75rem;
+			text-transform: uppercase;
+			color: #888;
+			margin-bottom: 5px;
+			display: block;
+		}
 
-	label {
-		font-size: 14px;
-		color: #555;
-		display: block;
-		margin-top: 10px;
-	}
+		.control-group {
+			background: var(--bg-light);
+			padding: 12px;
+			border-radius: 8px;
+			border: 1px solid var(--border);
+		}
 
-	input {
-		width: 100%;
-		padding: 8px;
-		margin-top: 5px;
-		border: 1px solid #ccc;
-		border-radius: 5px;
-	}
+		label {
+			font-size: 0.85rem;
+			color: #444;
+			display: block;
+			margin-top: 10px;
+		}
 
-	button {
-		width: 100%;
-		padding: 10px;
-		font-size: 14px;
-		border: none;
-		border-radius: 5px;
-		cursor: pointer;
-		transition: 0.2s;
-	}
+		label:first-child { margin-top: 0; }
 
-	button:hover {
-		opacity: 0.8;
-	}
+		input, select {
+			width: 100%;
+			padding: 8px 10px;
+			margin-top: 5px;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+			font-size: 14px;
+			outline: none;
+		}
 
-	#downloadBtn {
-		background: #28a745;
-		color: white;
-	}
+		input:focus, select:focus {
+			border-color: var(--primary);
+			box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+		}
 
-	#startBtn {
-		background: #007bff;
-		color: white;
-	}
+		.coord-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 8px;
+		}
 
-	#stitchBtn {
-		background: #ff9800;
-		color: white;
-	}
+		.coord-grid label {
+			margin-top: 0 !important;
+		}
 
-	#map {
-		flex-grow: 1;
-		height: 100vh;
-		z-index: 500;
-		margin-left: 20%;
-	}
+		/* BUTTONS */
+		.button-stack {
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+		}
 
-	#progress-container {
-		display: none;
-		margin-top: 10px;
-	}
+		button {
+			width: 100%;
+			padding: 12px;
+			font-size: 14px;
+			font-weight: 600;
+			border: none;
+			border-radius: 6px;
+			cursor: pointer;
+			transition: all 0.2s;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+		}
 
-	#downloadLink {
-		display: none;
-		text-align: center;
-		font-size: 14px;
-		color: #007bff;
-		text-decoration: none;
-		margin-top: 10px;
-		cursor: pointer;
-	}
+		#startBtn { background: var(--primary); color: white; }
+		#stitchBtn { background: var(--warning); color: white; }
+		button:hover { filter: brightness(90%); transform: translateY(-1px); }
+		button:active { transform: translateY(0); }
 
-	#downloadLink:hover {
-		text-decoration: underline;
-	}
-	.home-icon {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      font-size: 1.5rem;
-      background: #fff;
-      padding: 0.3rem 0.6rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-      z-index: 2000;
-      transition: transform 0.3s ease;
-    }
+		/* INFO BOXES */
+		#tile-preview {
+			background: #fff3cd;
+			border: 1px solid #ffeeba;
+			padding: 12px;
+			border-radius: 8px;
+			font-size: 0.85rem;
+			line-height: 1.4;
+		}
 
-    .home-icon:hover {
-      transform: scale(1.1);
-    }
+		#progress-container {
+			display: none;
+			background: #e7f3ff;
+			padding: 12px;
+			border-radius: 8px;
+			border: 1px solid #b8daff;
+		}
 
-    .home-icon a {
-      text-decoration: none;
-      color: #333;
-      display: block;
-    }
+		progress {
+			width: 100%;
+			height: 10px;
+			margin-top: 8px;
+			border-radius: 5px;
+		}
 
-    .home-icon a:hover {
-      color: #007acc;
-    }
+		#status {
+			font-size: 0.85rem;
+			font-weight: bold;
+			text-align: center;
+		}
+
+		#downloadLink {
+			display: none;
+			text-align: center;
+			background: var(--success);
+			color: white;
+			padding: 12px;
+			border-radius: 6px;
+			text-decoration: none;
+			font-weight: bold;
+			margin-top: 10px;
+		}
+
+		#map {
+			flex-grow: 1;
+			height: 100vh;
+			z-index: 500;
+		}
 	</style>
 </head>
 
 <body>
-	<div class="home-icon">
-		<a href="/gallery" title="Go to gallery" target="_blank">🖼️</a>
-	</div>
 	<div id="sidebar">
-		<h1>OGF Tile Downloader</h1>
-		<label>Tile Server: <select id="tileServer" onchange="changeTileServer()">
-				<option value="https://tile.opengeofiction.net/ogf-carto/">OGF Carto</option>
-				<option value="https://tiles04.rent-a-planet.com/ogf-topo/">OGF Topo</option>
-				<option value="https://tiles06.opengeofiction.net/cyclogf/">CyclOGF</option>
-				<option value="https://tiles02.rent-a-planet.com/arhet-carto/">Arhet Carto</option>
-				<option value="https://tile.memomaps.de/tilegen/">ÖPNVKarte/Openbusmap (OSM)</option>
-				<option value="https://a.tile.openstreetmap.fr/hot/">Humanitarian (OSM)</option>
-				<option value="https://a.tile.openstreetmap.fr/osmfr/">OSM France (OSM)</option>
-			</select>
-		</label>
-		<label>Zoom Level: <input type="number" id="zoom" min="1" max="20" value="15"></label>
-		<label>Start Lat: <input type="text" id="lat1"></label>
-		<label>Start Lon: <input type="text" id="lon1"></label>
-		<label>End Lat: <input type="text" id="lat2"></label>
-		<label>End Lon: <input type="text" id="lon2"></label>
-		<button id="startBtn" onclick="startDownload()">Start Download</button>
-		<button id="stitchBtn" onclick="stitchMap()">Stitch Map</button>
+		<h1>OGFimg</h1>
+
+		<div>
+			<span class="section-label">1. Configuration</span>
+			<div class="control-group">
+				<label>Map Source
+					<select id="tileServer" onchange="changeTileServer()">
+						<option value="https://tile.opengeofiction.net/ogf-carto/">OGF Carto</option>
+						<option value="https://tiles04.rent-a-planet.com/ogf-topo/">OGF Topo</option>
+						<option value="https://tiles06.opengeofiction.net/cyclogf/">CyclOGF</option>
+						<option value="https://tiles02.rent-a-planet.com/arhet-carto/">Arhet Carto</option>
+						<option value="https://tile.memomaps.de/tilegen/">ÖPNVKarte (OSM)</option>
+						<option value="https://a.tile.openstreetmap.fr/hot/">Humanitarian (OSM)</option>
+						<option value="https://a.tile.openstreetmap.fr/osmfr/">OSM France (OSM)</option>
+					</select>
+				</label>
+				<label>Zoom Level (Detail)
+					<input type="number" id="zoom" min="1" max="20" value="15">
+				</label>
+			</div>
+		</div>
+
+		<div>
+			<span class="section-label">2. Area Selection</span>
+			<div class="control-group">
+				<div class="coord-grid">
+					<label>Start Lat <input type="text" id="lat1" placeholder="0.00"></label>
+					<label>Start Lon <input type="text" id="lon1" placeholder="0.00"></label>
+					<label>End Lat <input type="text" id="lat2" placeholder="0.00"></label>
+					<label>End Lon <input type="text" id="lon2" placeholder="0.00"></label>
+				</div>
+				<p style="font-size: 11px; color: #777; margin-top: 8px;">Tip: Use the rectangle tool on the map to select an area.</p>
+			</div>
+		</div>
+
+		<div>
+			<span class="section-label">3. Download & Process</span>
+			<div id="tile-preview">
+				<strong>Ready to fetch:</strong><br>
+				Tiles: <span id="preview-count">0</span><br>
+				Resolution: <span id="preview-size">0 x 0 px</span>
+			</div>
+
+			<div class="button-stack" style="margin-top: 10px;">
+				<button id="startBtn" onclick="startDownload()">Start Download</button>
+				<button id="stitchBtn" onclick="stitchMap()">Stitch Map</button>
+			</div>
+		</div>
+
 		<div id="progress-container">
-			<p>Download Progress: <span id="progress-text">0 / 0</span></p>
+			<p style="font-size: 13px;">Progress: <span id="progress-text">0 / 0</span></p>
 			<progress id="progress-bar" value="0" max="100"></progress>
 		</div>
+
 		<p id="status"></p>
-		<a id="downloadLink" target="_blank">Download Stitched Map</a>
+		<a id="downloadLink" target="_blank">Save Image</a>
 	</div>
+
 	<div id="map"></div>
 	<script>
 	let map = L.map('map').setView([0, 0], 2);
@@ -220,7 +265,7 @@
 			tileLayer = L.tileLayer(selectedServer + '{z}/{x}/{y}.png', {
 			attribution: 'Tiles and data created by Geofictician and contributors, built on the OpenStreetMap platform, including creative re-use of data shared by OpenStreetMap contributors.'
 			}).addTo(map);
-		
+
 		} else if (selectedServer == "https://a.tile.openstreetmap.fr/hot/") {
 			tileLayer = L.tileLayer(selectedServer + '{z}/{x}/{y}.png', {
 			attribution: '(C) OpenStreetMap contributors. Tiles style by Humanitarian OpenStreetMap Team hosted by OpenStreetMap France.'
@@ -267,6 +312,8 @@
 		document.getElementById('lon1').value = bounds.getSouthWest().lng.toFixed(5);
 		document.getElementById('lat2').value = bounds.getNorthEast().lat.toFixed(5);
 		document.getElementById('lon2').value = bounds.getNorthEast().lng.toFixed(5);
+
+		updateTileCount(); // <--- Add this line
 	});
 	// Function to start downloading tiles
 	function startDownload() {
@@ -276,20 +323,20 @@
 	    let lat2 = document.getElementById('lat2').value;
 	    let lon2 = document.getElementById('lon2').value;
 	    let tileServer = document.getElementById('tileServer').value;
-	
+
 	    if(!lat1 || !lon1 || !lat2 || !lon2) {
 	        alert('Enter valid coordinates or draw a rectangle on the map!');
 	        return;
 	    }
-	
+
 	    // Reset UI
 	    document.getElementById('status').innerText = "";
 	    document.getElementById('downloadLink').style.display = "none";
-	
+
 	    document.getElementById('progress-container').style.display = "block";
 	    document.getElementById('progress-text').innerText = "0 / 0";
 	    document.getElementById('progress-bar').value = 0;
-	
+
 	    fetch('/start_download', {
 	        method: 'POST',
 	        headers: { 'Content-Type': 'application/json' },
@@ -304,21 +351,21 @@
 	    })
 	    .then(async res => {
 	        const data = await res.json();
-	
+
 	        // ❌ BACKEND ERROR
 	        if (!res.ok || data.status === "Error") {
-	
+
 	            // Hide progress UI
 	            document.getElementById('progress-text').innerText = "";
 	            document.getElementById('progress-bar').value = 0;
-	
+
 	            // Show error message instead
 	            document.getElementById('status').innerText = data.message || "Unexpected error";
-	
+
 	            return; // stop — don't start polling
 	        }
-	
-	        // ✅ SUCCESS — show tiles counter
+
+	        // SUCCESS — show tiles counter
 	        document.getElementById('status').innerText = "Download started…";
 	        checkProgress();
 	    })
@@ -361,6 +408,49 @@
 			}
 		});
 	}
+
+	function updateTileCount() {
+		let zoom = document.getElementById('zoom').value;
+		let lat1 = document.getElementById('lat1').value;
+		let lon1 = document.getElementById('lon1').value;
+		let lat2 = document.getElementById('lat2').value;
+		let lon2 = document.getElementById('lon2').value;
+
+		if (!lat1 || !lon1 || !lat2 || !lon2) return;
+
+		fetch('/calculate_tiles', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				zoom: parseInt(zoom),
+				lat1: parseFloat(lat1),
+				lon1: parseFloat(lon1),
+				lat2: parseFloat(lat2),
+				lon2: parseFloat(lon2)
+			})
+		})
+		.then(res => res.json())
+		.then(data => {
+			document.getElementById('preview-count').innerText = data.total_tiles;
+			document.getElementById('preview-size').innerText = data.dimensions;
+
+			// Visual warning if it exceeds your 10,000 limit
+			if (data.total_tiles > 1000) {
+				document.getElementById('preview-count').style.color = "red";
+				document.getElementById('preview-count').style.fontWeight = "bold";
+			} else {
+				document.getElementById('preview-count').style.color = "black";
+				document.getElementById('preview-count').style.fontWeight = "normal";
+			}
+		});
+	}
+
+	// Attach listeners to input fields
+	document.getElementById('zoom').addEventListener('input', updateTileCount);
+	document.getElementById('lat1').addEventListener('input', updateTileCount);
+	document.getElementById('lon1').addEventListener('input', updateTileCount);
+	document.getElementById('lat2').addEventListener('input', updateTileCount);
+	document.getElementById('lon2').addEventListener('input', updateTileCount);
 	</script>
 </body>
 
